@@ -1,0 +1,302 @@
+<!DOCTYPE html> 
+<html lang="pt-BR"> 
+<head> 
+    <meta charset="UTF-8"> 
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <title>UniFlow 360 - Gestão de Chamados</title> 
+    <script src="https://cdn.tailwindcss.com"></script> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"> 
+    <link rel="stylesheet" href="style.css">
+</head> 
+<body class="bg-gray-50 text-slate-800"> 
+
+<div id="toast-container" class="fixed top-5 right-5 z-50 space-y-3 pointer-events-none max-w-sm w-full"></div>
+
+<div id="login-container" class="min-h-screen flex items-center justify-center bg-slate-900 px-4">
+    <div class="max-w-md w-full bg-white rounded-3xl shadow-2xl p-8 space-y-6">
+        <div class="text-center">
+            <div class="inline-flex w-16 h-16 bg-blue-600 rounded-2xl items-center justify-center text-white text-4xl font-bold mb-3 shadow-lg shadow-blue-500/30">U</div>
+            <h2 class="text-3xl font-bold text-gray-800">UniFlow 360</h2>
+            <p class="text-gray-500 text-sm mt-1">Portal de Chamados e Infraestrutura Acadêmica</p>
+        </div>
+        
+        <form id="loginForm" onsubmit="fazerLogin(event)" class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">E-mail Acadêmico / Funcional</label>
+                <input type="email" id="login-email" required class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" placeholder="usuario@uniflow.com">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Senha</label>
+                <input type="password" id="login-senha" required class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" placeholder="••••••••">
+            </div>
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-semibold transition-all shadow-lg shadow-blue-500/20 transform active:scale-[0.98]">
+                Acessar Sistema
+            </button>
+        </form>
+        
+        <div class="bg-slate-50 p-4 rounded-2xl border text-[11px] text-gray-500 grid grid-cols-2 gap-2">
+            <p class="font-semibold text-gray-700 col-span-2 mb-0.5">💡 Credenciais de Teste (Senha: 123):</p>
+            <p>• joao@uniflow.com <span class="text-blue-600 font-medium">(Aluno)</span></p>
+            <p>• maria@uniflow.com <span class="text-purple-600 font-medium">(Professor)</span></p>
+            <p>• tecnico@uniflow.com <span class="text-amber-600 font-medium">(Técnico)</span></p>
+            <p>• ricardo@uniflow.com <span class="text-emerald-600 font-medium">(Gestor)</span></p>
+        </div>
+    </div>
+</div>
+ 
+<div id="app-container" class="flex h-screen hidden"> 
+    <div class="w-72 bg-white border-r shadow-sm flex flex-col z-20"> 
+        <div class="p-6 border-b"> 
+            <div class="flex items-center gap-3"> 
+                <div class="w-11 h-11 bg-blue-600 rounded-2xl flex items-center justify-center text-white text-3xl font-bold shadow-md shadow-blue-500/20">U</div> 
+                <div> 
+                    <h1 class="text-3xl font-bold text-blue-700 tracking-tight">UniFlow</h1> 
+                    <p class="text-xs text-gray-400 uppercase tracking-widest font-semibold -mt-1">CAMPUS 360</p> 
+                </div> 
+            </div> 
+        </div> 
+ 
+        <nav class="flex-1 p-4 space-y-1 overflow-y-auto" id="sidebar-nav"> 
+            <button id="nav-dashboard" onclick="navigateTo('dashboard')" class="nav-btn flex items-center gap-3 w-full px-5 py-3.5 rounded-xl text-left font-medium text-gray-600 hover:bg-gray-50 transition-all"> 
+                <i class="fa-solid fa-chart-line w-5 text-center"></i> Dashboard 
+            </button> 
+            <button id="nav-new-ticket" onclick="navigateTo('new-ticket')" class="nav-btn flex items-center gap-3 w-full px-5 py-3.5 rounded-xl text-left font-medium text-gray-600 hover:bg-gray-50 transition-all"> 
+                <i class="fa-solid fa-circle-plus w-5 text-center"></i> Novo Chamado 
+            </button> 
+            <button id="nav-tickets" onclick="navigateTo('tickets')" class="nav-btn flex items-center gap-3 w-full px-5 py-3.5 rounded-xl text-left font-medium text-gray-600 hover:bg-gray-50 transition-all"> 
+                <i class="fa-solid fa-receipt w-5 text-center"></i> Meus Chamados 
+            </button> 
+            <button id="nav-admin" onclick="navigateTo('admin')" class="nav-btn flex items-center gap-3 w-full px-5 py-3.5 rounded-xl text-left font-medium text-gray-600 hover:bg-gray-50 transition-all"> 
+                <i class="fa-solid fa-screwdriver-wrench w-5 text-center"></i> Painel Técnico 
+            </button> 
+            <button id="nav-settings" onclick="navigateTo('settings')" class="nav-btn flex items-center gap-3 w-full px-5 py-3.5 rounded-xl text-left font-medium text-gray-600 hover:bg-gray-50 transition-all"> 
+                <i class="fa-solid fa-sliders w-5 text-center"></i> Cadastros / Infra 
+            </button> 
+        </nav> 
+
+        <div class="p-4 border-t bg-slate-50/80 flex flex-col gap-3">
+            <div class="flex items-center gap-3 px-2">
+                <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-lg" id="user-avatar">?</div>
+                <div class="overflow-hidden">
+                    <p class="font-semibold text-slate-800 text-sm truncate" id="user-name">...</p>
+                    <p class="text-[10px] text-gray-500 uppercase font-bold tracking-wider" id="user-role">...</p>
+                </div>
+            </div>
+            <button onclick="fazerLogout()" class="w-full bg-white border border-red-100 hover:bg-red-50 text-red-600 py-2.5 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2 shadow-sm">
+                <i class="fa-solid fa-power-off text-xs"></i> Sair do Sistema
+            </button>
+        </div>
+    </div> 
+ 
+    <div class="flex-1 flex flex-col overflow-hidden"> 
+        <header class="bg-white border-b px-8 py-5 flex justify-between items-center z-10 shadow-sm"> 
+            <h2 id="page-title" class="text-2xl font-bold text-slate-800 tracking-tight">Dashboard</h2> 
+            <div class="flex items-center gap-4"> 
+                <div class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shadow-sm"> 
+                    <div class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div> 
+                    Servidor Operacional 
+                </div> 
+            </div> 
+        </header> 
+ 
+        <div class="flex-1 overflow-auto p-8" id="content"> 
+             
+            <div id="dashboard-view" class="space-y-8"> 
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6"> 
+                    <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm card-hover"> 
+                        <p class="text-xs uppercase font-bold text-slate-400 tracking-wider">Total de Ocorrências</p> 
+                        <p id="total" class="text-5xl font-black mt-2 text-slate-800">0</p> 
+                    </div> 
+                    <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm card-hover"> 
+                        <p class="text-xs uppercase font-bold text-slate-400 tracking-wider">Aguardando Triagem</p> 
+                        <p id="aberto" class="text-5xl font-black mt-2 text-amber-600">0</p> 
+                    </div> 
+                    <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm card-hover"> 
+                        <p class="text-xs uppercase font-bold text-slate-400 tracking-wider">Em Resolução</p> 
+                        <p id="atendimento" class="text-5xl font-black mt-2 text-blue-600">0</p> 
+                    </div> 
+                    <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm card-hover"> 
+                        <p class="text-xs uppercase font-bold text-slate-400 tracking-wider">Encerrados</p> 
+                        <p id="resolvidos" class="text-5xl font-black mt-2 text-emerald-600">0</p> 
+                    </div> 
+                </div> 
+ 
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6"> 
+                    <div class="bg-white border rounded-2xl p-6 shadow-sm flex flex-col justify-between"> 
+                        <div>
+                            <h3 class="font-bold text-slate-700 text-lg mb-1">Tempo Médio de Resolução (SLA)</h3> 
+                            <p class="text-xs text-gray-400 mb-4">Métrica global calculada automaticamente</p>
+                        </div>
+                        <p id="sla" class="text-6xl font-black text-blue-600 tracking-tight my-4">2.4 <span class="text-xl font-normal text-slate-400">dias</span></p> 
+                        <div class="text-xs text-emerald-600 font-medium bg-emerald-50 p-2.5 rounded-xl border border-emerald-100"><i class="fa-solid fa-caret-up"></i> 14% mais ágil que a meta estipulada institucional.</div>
+                    </div> 
+                    
+                    <div class="bg-white border rounded-2xl p-6 shadow-sm"> 
+                        <h3 class="font-bold text-slate-700 text-lg mb-1">Incidentes por Categoria</h3> 
+                        <p class="text-xs text-gray-400 mb-4">Volume atualizado por setor de infraestrutura</p>
+                        <div id="chart-categorias-container" class="space-y-4 mt-2">
+                            </div> 
+                    </div> 
+
+                    <div class="bg-slate-900 text-white border rounded-2xl p-6 shadow-xl relative overflow-hidden flex flex-col justify-between">
+                        <div class="absolute -right-6 -top-6 text-slate-800 text-9xl font-black pointer-events-none opacity-20">AI</div>
+                        <div>
+                            <div class="inline-flex bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider mb-3 shadow-md shadow-cyan-500/20">
+                                <i class="fa-solid fa-brain mr-1.5 mt-0.5 animate-pulse"></i> UniFlow AI Hub
+                            </div>
+                            <h3 class="font-bold text-xl tracking-tight">Predição de Demandas</h3>
+                            <p class="text-slate-400 text-xs mt-1">Análise preditiva de riscos baseada em dados históricos do campus.</p>
+                        </div>
+                        <div class="bg-slate-800/80 border border-slate-700/50 p-4 rounded-xl space-y-3 my-4">
+                            <div class="flex justify-between items-center text-xs">
+                                <span class="text-slate-300">Tendência Próximo Mês:</span>
+                                <span class="font-bold text-cyan-400 text-sm" id="ia-trend">+4.2% Infra</span>
+                            </div>
+                            <div class="flex justify-between items-center text-xs">
+                                <span class="text-slate-300">Ponto Crítico Alvo:</span>
+                                <span class="font-bold text-amber-400 text-sm" id="ia-critical">Laboratórios</span>
+                            </div>
+                        </div>
+                        <p class="text-[10px] text-slate-400"><i class="fa-solid fa-circle-info"></i> Algoritmo baseado em sazonalidade de períodos de avaliações acadêmicas.</p>
+                    </div>
+                </div> 
+            </div> 
+ 
+            <div id="new-ticket-view" class="hidden"> 
+                <div class="max-w-2xl mx-auto bg-white rounded-3xl border shadow-sm p-8"> 
+                    <div class="flex justify-between items-start mb-6">
+                        <div>
+                            <h3 class="text-2xl font-black text-slate-800 tracking-tight">Abertura de Ocorrência</h3> 
+                            <p class="text-sm text-gray-500 mt-1">Insira os detalhes do problema identificado no campus.</p>
+                        </div>
+                    </div>
+                    <form id="ticketForm" onsubmit="criarChamado(event)" class="space-y-5"> 
+                        <div> 
+                            <label class="block text-sm font-semibold mb-1.5">Título Curto do Problema</label> 
+                            <input type="text" id="titulo" required class="w-full border rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Ex: Ar condicionado pingando água"> 
+                        </div> 
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5"> 
+                            <div> 
+                                <label class="block text-sm font-semibold mb-1.5">Categoria</label> 
+                                <select id="categoria" required class="w-full border rounded-xl px-4 py-3 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"></select> 
+                            </div> 
+                            <div> 
+                                <label class="block text-sm font-semibold mb-1.5">Local / Bloco / Sala</label> 
+                                <select id="local" required class="w-full border rounded-xl px-4 py-3 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"></select> 
+                            </div> 
+                            <div> 
+                                <label class="block text-sm font-semibold mb-1.5">Equipamento Vinculado</label> 
+                                <select id="equipamento" required class="w-full border rounded-xl px-4 py-3 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"></select> 
+                            </div> 
+                            <div> 
+                                <label class="block text-sm font-semibold mb-1.5">Prioridade Inicial</label> 
+                                <select id="prioridade" class="w-full border rounded-xl px-4 py-3 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"> 
+                                    <option value="Baixa">Baixa</option> 
+                                    <option value="Média" selected>Média</option> 
+                                    <option value="Alta">Alta</option> 
+                                    <option value="Urgente">Urgente</option> 
+                                </select> 
+                            </div> 
+                        </div> 
+                        <div> 
+                            <div class="flex justify-between items-center mb-1.5">
+                                <label class="block text-sm font-semibold">Descrição Detalhada</label> 
+                                <span id="ia-badge-typing" class="text-[11px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-medium transition-all opacity-0"><i class="fa-solid fa-robot text-blue-500"></i> IA Analisando...</span>
+                            </div>
+                            <textarea id="descricao" rows="4" required oninput="analisarDescricaoComIA(this.value)" class="w-full border rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Descreva o cenário com detalhes para agilizar o atendimento técnico..."></textarea> 
+                        </div> 
+                        
+                        <div id="ia-suggestion-box" class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/60 p-4 rounded-xl hidden transition-all">
+                            <div class="flex items-start gap-3">
+                                <div class="text-blue-600 mt-0.5"><i class="fa-solid fa-wand-magic-sparkles text-lg"></i></div>
+                                <div>
+                                    <p class="text-xs font-bold text-blue-900 uppercase tracking-wider">Classificação de IA Assistente</p>
+                                    <p class="text-xs text-blue-700 mt-0.5" id="ia-suggestion-text"></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold text-lg transition-all shadow-md shadow-blue-500/10"> 
+                            Registrar Ocorrência
+                        </button> 
+                    </form> 
+                </div> 
+            </div> 
+ 
+            <div id="tickets-view" class="hidden space-y-6"> 
+                <h3 class="text-2xl font-bold tracking-tight">Histórico de Ocorrências</h3> 
+                <div class="bg-white rounded-2xl border overflow-hidden shadow-sm"> 
+                    <div class="overflow-x-auto">
+                        <table class="w-full border-collapse"> 
+                            <thead class="bg-slate-50 border-b"> 
+                                <tr> 
+                                    <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-400">Protocolo</th> 
+                                    <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-400">Título / Assunto</th> 
+                                    <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-400">Localização</th> 
+                                    <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-400">Gravidade</th> 
+                                    <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-400">Status Atual</th> 
+                                    <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-400">Abertura</th> 
+                                </tr> 
+                            </thead> 
+                            <tbody id="table-body" class="divide-y divide-slate-100"></tbody> 
+                        </table> 
+                    </div>
+                </div> 
+            </div> 
+ 
+            <div id="admin-view" class="hidden space-y-6"> 
+                <h3 class="text-2xl font-bold tracking-tight">Fila de Atendimento e Triagem Geral</h3> 
+                <div class="bg-white rounded-2xl p-6 border shadow-sm"> 
+                    <div id="admin-tickets-list" class="space-y-4"></div> 
+                </div> 
+            </div> 
+
+            <div id="settings-view" class="hidden space-y-8">
+                <div>
+                    <h3 class="text-2xl font-bold tracking-tight">Infraestrutura do Campus</h3>
+                    <p class="text-sm text-gray-500 mt-1">Gerencie as salas, categorias de problemas e ativos mapeados.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white p-6 border rounded-2xl shadow-sm flex flex-col justify-between">
+                        <div>
+                            <h4 class="font-bold text-slate-700 mb-3"><i class="fa-solid fa-building text-blue-500 mr-2"></i> Salas e Laboratórios</h4>
+                            <div id="list-settings-local" class="max-h-40 overflow-y-auto border rounded-xl divide-y p-1 space-y-1 bg-slate-50 text-xs"></div>
+                        </div>
+                        <div class="mt-4 flex gap-2">
+                            <input type="text" id="input-add-local" class="border rounded-xl px-3 py-2 text-xs flex-1" placeholder="Ex: Laboratório 3 - Bloco C">
+                            <button onclick="adicionarItemInfra('local')" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2 rounded-xl">Add</button>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 border rounded-2xl shadow-sm flex flex-col justify-between">
+                        <div>
+                            <h4 class="font-bold text-slate-700 mb-3"><i class="fa-solid fa-tags text-purple-500 mr-2"></i> Categorias de Ocorrências</h4>
+                            <div id="list-settings-categoria" class="max-h-40 overflow-y-auto border rounded-xl divide-y p-1 space-y-1 bg-slate-50 text-xs"></div>
+                        </div>
+                        <div class="mt-4 flex gap-2">
+                            <input type="text" id="input-add-categoria" class="border rounded-xl px-3 py-2 text-xs flex-1" placeholder="Ex: Elétrica / Tomadas">
+                            <button onclick="adicionarItemInfra('categoria')" class="bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold px-4 py-2 rounded-xl">Add</button>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 border rounded-2xl shadow-sm flex flex-col justify-between">
+                        <div>
+                            <h4 class="font-bold text-slate-700 mb-3"><i class="fa-solid fa-computer text-amber-500 mr-2"></i> Ativos / Equipamentos</h4>
+                            <div id="list-settings-equipamento" class="max-h-40 overflow-y-auto border rounded-xl divide-y p-1 space-y-1 bg-slate-50 text-xs"></div>
+                        </div>
+                        <div class="mt-4 flex gap-2">
+                            <input type="text" id="input-add-equipamento" class="border rounded-xl px-3 py-2 text-xs flex-1" placeholder="Ex: Nobreak SMS 1200VA">
+                            <button onclick="adicionarItemInfra('equipamento')" class="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-4 py-2 rounded-xl">Add</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div> 
+    </div> 
+</div> 
+ 
+<script src="script.js"></script> 
+</body> 
+</html>

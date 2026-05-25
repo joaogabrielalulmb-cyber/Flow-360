@@ -1,0 +1,56 @@
+{
+  "usuariosPermitidos": [
+    { "email": "joao@uniflow.com", "senha": "123", "nome": "João Gabriel", "role": "Aluno" },
+    { "email": "maria@uniflow.com", "senha": "123", "nome": "Maria Clara", "role": "Professor" },
+    { "email": "tecnico@uniflow.com", "senha": "123", "nome": "Carlos Souza", "role": "Técnico" },
+    { "email": "ricardo@uniflow.com", "senha": "123", "nome": "Ricardo Silva", "role": "Gestor" }
+  ],
+  "infraDefault": {
+    "local": [
+      "Sala 305 - Bloco B",
+      "Laboratório de Informática 2",
+      "Auditório Principal",
+      "Bloco Administrativo"
+    ],
+    "categoria": [
+      "Infraestrutura",
+      "Laboratório",
+      "Conectividade / Rede",
+      "Equipamento Audiovisual"
+    ],
+    "equipamento": [
+      "Projetor Epson PowerLite",
+      "Ar Condicionado Split 24BTUs",
+      "Desktop Dell Vostro",
+      "Roteador Cisco AP"
+    ]
+  },
+  "chamadosIniciais": [
+    {
+      "id": "UF8421",
+      "titulo": "Computador do laboratório não liga",
+      "categoria": "Laboratório",
+      "local": "Laboratório de Informática 2",
+      "equipamento": "Desktop Dell Vostro",
+      "prioridade": "Alta",
+      "descricao": "O computador número 04 não está dando sinal de vida. Já verifiquei os cabos da fonte.",
+      "status": "Aberto",
+      "data": "22/05/2026",
+      "responsavel": null,
+      "requisitante": "João Gabriel"
+    },
+    {
+      "id": "UF3102",
+      "titulo": "Ar condicionado parou de esfriar",
+      "categoria": "Infraestrutura",
+      "local": "Sala 305 - Bloco B",
+      "equipamento": "Ar Condicionado Split 24BTUs",
+      "prioridade": "Urgente",
+      "descricao": "O aparelho liga, mas o compressor faz barulho e não está refrigerando a sala de aula.",
+      "status": "Em Atendimento",
+      "data": "23/05/2026",
+      "responsavel": "Carlos Souza",
+      "requisitante": "Maria Clara"
+    }
+  ]
+}
