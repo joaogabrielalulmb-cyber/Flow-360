@@ -4,290 +4,449 @@
     <meta charset="UTF-8"> 
     <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
     <title>UniFlow 360 - Gestão de Chamados</title> 
+    
+    <link rel="icon" type="image/png" href="images/favicon/favicon.png"> 
+    <link rel="apple-touch-icon" href="images/favicon/apple-touch-icon.png">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <script src="https://cdn.tailwindcss.com"></script> 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"> 
     <link rel="stylesheet" href="style.css">
+
+    <link rel="icon" type="image/png" href="images/favicon/favicon.io/">
+    <script>
+        tailwind.config = {
+            darkMode: 'class', 
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+                    colors: {
+                        brand: {
+                            green: '#0F4C23',
+                            lightgreen: '#1A6B34',
+                            orange: '#E67817',
+                            lightorange: '#FCEBDB',
+                            beige: '#D3BFA9',
+                            lightbeige: '#F4F0EB'
+                        }
+                    },
+                    animation: {
+                        'fade-in-up': 'fadeInUp 0.8s ease-out forwards',
+                        'float': 'float 3s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        fadeInUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
 </head> 
-<body class="bg-gray-50 text-slate-800"> 
+<body class="bg-[#F8F9FA] dark:bg-slate-900 text-slate-800 dark:text-slate-200 antialiased overflow-hidden transition-colors duration-500" onload="inicializarSistema()"> 
 
-<div id="toast-container" class="fixed top-5 right-5 z-50 space-y-3 pointer-events-none max-w-sm w-full"></div>
+<div id="toast-container" class="fixed top-5 right-5 z-[70] space-y-3 pointer-events-none max-w-sm w-full"></div>
 
-<div id="login-container" class="min-h-screen flex items-center justify-center bg-slate-900 px-4">
-    <div class="max-w-md w-full bg-white rounded-3xl shadow-2xl p-8 space-y-6">
-        <div class="text-center">
-            <div class="inline-flex w-16 h-16 bg-blue-600 rounded-2xl items-center justify-center text-white text-4xl font-bold mb-3 shadow-lg shadow-blue-500/30">U</div>
-            <h2 class="text-3xl font-bold text-gray-800">UniFlow 360</h2>
-            <p class="text-gray-500 text-sm mt-1">Portal de Chamados e Infraestrutura Acadêmica</p>
+<div id="ticket-modal" class="fixed inset-0 z-[60] hidden flex items-center justify-center bg-brand-green/20 dark:bg-black/60 backdrop-blur-sm px-4 transition-all duration-300 opacity-0">
+    <div class="bg-white dark:bg-slate-800 w-full max-w-3xl rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden transform scale-95 transition-transform duration-300" id="ticket-modal-content">
+        
+        <div class="px-6 py-4 border-b border-gray-100 dark:border-slate-700 flex justify-between items-start bg-stone-50 dark:bg-slate-900/50">
+            <div>
+                <span class="text-xs font-bold text-brand-orange uppercase tracking-wider bg-orange-100 dark:bg-orange-900/30 px-2 py-1 rounded">Protocolo #<span id="modal-protocol">0000</span></span>
+                <div class="flex items-center gap-3 mt-2">
+                    <h3 class="text-xl font-extrabold text-gray-800 dark:text-white" id="modal-title">Título do Chamado</h3>
+                    <span id="badge-status-atual" class="px-2 py-1 text-[10px] font-bold uppercase rounded bg-gray-200 text-gray-700 shadow-sm">Aberto</span>
+                </div>
+            </div>
+            <button onclick="fecharModalTicket()" class="text-gray-400 hover:text-red-500 transition-colors w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-slate-800">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
         </div>
         
-        <form id="loginForm" onsubmit="fazerLogin(event)" class="space-y-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">E-mail Acadêmico / Funcional</label>
-                <input type="email" id="login-email" required class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" placeholder="usuario@uniflow.com">
+        <div id="tech-actions-container" class="hidden px-6 py-3 bg-white dark:bg-slate-800 border-b border-gray-100 dark:border-slate-700 flex items-center justify-between">
+            <span class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider"><i class="fa-solid fa-screwdriver-wrench mr-1"></i> Ações do Técnico</span>
+            <div class="flex gap-2">
+                <button onclick="atualizarStatusChamado('Em Atendimento')" class="bg-brand-orange hover:bg-orange-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition-all shadow hover:shadow-md">
+                    <i class="fa-solid fa-user-gear mr-1"></i> Iniciar Atendimento
+                </button>
+                <button onclick="atualizarStatusChamado('Resolvido')" class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition-all shadow hover:shadow-md">
+                    <i class="fa-solid fa-check-double mr-1"></i> Marcar como Resolvido
+                </button>
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Senha</label>
-                <input type="password" id="login-senha" required class="w-full border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" placeholder="••••••••">
+        </div>
+        
+        <div class="flex-1 overflow-y-auto p-6 bg-white dark:bg-slate-800 space-y-6 custom-scrollbar" id="timeline-container">
+        </div>
+
+        <div class="p-4 border-t border-gray-100 dark:border-slate-700 bg-stone-50 dark:bg-slate-900/50 flex gap-3">
+            <input type="text" id="modal-chat-input" class="flex-1 border border-gray-200 dark:border-slate-600 rounded-xl px-4 py-2.5 bg-white dark:bg-slate-700 dark:text-white text-sm focus:ring-2 focus:ring-brand-green outline-none transition-all shadow-sm" placeholder="Escreva uma nova mensagem ou atualização..." onkeypress="if(event.key === 'Enter') document.getElementById('btn-enviar-comentario').click()">
+            <button id="btn-enviar-comentario" class="bg-brand-green hover:bg-brand-lightgreen text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-lg hover:shadow-brand-green/40 hover:-translate-y-0.5 flex items-center justify-center gap-2">
+                <i class="fa-solid fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="login-container" class="fixed inset-0 z-50 overflow-hidden flex items-center justify-center px-4 transition-all duration-700 ease-in-out bg-brand-green/20 dark:bg-black/60 backdrop-blur-sm opacity-100">
+    <div class="absolute top-[-10%] left-[-10%] w-96 h-96 bg-brand-lightgreen rounded-full mix-blend-multiply filter blur-[100px] opacity-40 animate-pulse"></div>
+    <div class="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-brand-orange rounded-full mix-blend-multiply filter blur-[100px] opacity-30 animate-pulse" style="animation-delay: 1s;"></div>
+
+    <div class="max-w-md w-full bg-white/80 dark:bg-slate-800/80 backdrop-blur-2xl rounded-3xl shadow-[0_8px_32px_rgba(0,0,0,0.15)] p-8 space-y-6 relative z-10 border border-white/60 dark:border-slate-700/50 animate-fade-in-up my-auto">
+        <div class="text-center">
+            <h2 class="text-3xl font-extrabold text-gray-800 dark:text-white tracking-tight">UniFlow 360</h2>
+            <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">Portal de Serviços Institucionais</p>
+        </div>
+        
+        <form id="loginForm" onsubmit="fazerLogin(event)" class="space-y-5 mt-4">
+            <div class="group">
+                <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5 group-hover:text-brand-green transition-colors">E-mail Acadêmico</label>
+                <input type="email" id="login-email" required class="w-full bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border border-gray-200/80 dark:border-slate-700 rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-brand-green dark:text-white transition-all duration-300 shadow-sm" placeholder="usuario@uniflow.com">
             </div>
-            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-semibold transition-all shadow-lg shadow-blue-500/20 transform active:scale-[0.98]">
-                Acessar Sistema
+            <div class="group">
+                <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5 group-hover:text-brand-green transition-colors">Senha</label>
+                <div class="relative">
+                    <input type="password" id="login-senha" required class="w-full bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border border-gray-200/80 dark:border-slate-700 rounded-xl px-4 py-3.5 focus:outline-none focus:ring-2 focus:ring-brand-green dark:text-white transition-all duration-300 shadow-sm pr-12" placeholder="••••••••">
+                    <button type="button" onclick="toggleSenha()" class="absolute inset-y-0 right-0 px-4 text-gray-400 hover:text-brand-orange transition-colors">
+                        <i id="icone-senha" class="fa-solid fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="flex items-center justify-between">
+                <label class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer font-medium hover:text-brand-green transition-colors">
+                    <input type="checkbox" id="lembrar-mim" class="rounded text-brand-green focus:ring-brand-green w-4 h-4 border-gray-300 dark:border-slate-600 dark:bg-slate-800">
+                    Lembrar de mim
+                </label>
+            </div>
+            <button type="submit" id="btn-login" class="w-full bg-brand-green hover:bg-brand-lightgreen text-white py-4 rounded-xl font-bold transition-all duration-300 shadow-lg shadow-brand-green/20 hover:-translate-y-1 relative overflow-hidden group">
+                <span class="relative z-10">Acessar Sistema</span>
+                <i id="loading-login" class="fa-solid fa-circle-notch fa-spin hidden relative z-10 ml-2"></i>
             </button>
         </form>
-        
-        <div class="bg-slate-50 p-4 rounded-2xl border text-[11px] text-gray-500 grid grid-cols-2 gap-2">
-            <p class="font-semibold text-gray-700 col-span-2 mb-0.5">💡 Credenciais de Teste (Senha: 123):</p>
-            <p>• joao@uniflow.com <span class="text-blue-600 font-medium">(Aluno)</span></p>
-            <p>• maria@uniflow.com <span class="text-purple-600 font-medium">(Professor)</span></p>
-            <p>• tecnico@uniflow.com <span class="text-amber-600 font-medium">(Técnico)</span></p>
-            <p>• ricardo@uniflow.com <span class="text-emerald-600 font-medium">(Gestor)</span></p>
+
+        <div class="mt-6 pt-6 border-t border-gray-200/60 dark:border-slate-700/50">
+            <h4 class="text-[11px] font-bold text-gray-500 dark:text-gray-400 mb-3 text-center uppercase tracking-wider"><i class="fa-solid fa-flask text-brand-orange mr-1"></i> Contas para Teste</h4>
+            <div class="grid grid-cols-2 gap-2 text-xs">
+                
+                <div class="bg-emerald-50/50 dark:bg-emerald-900/10 p-2.5 rounded-lg border border-emerald-100 dark:border-emerald-800/30 hover:bg-emerald-50 transition-colors cursor-default">
+                    <span class="block font-bold text-emerald-700 dark:text-emerald-400 mb-0.5">Gestor</span>
+                    <span class="text-gray-600 dark:text-gray-300 block truncate" title="ricardo@uniflow.com">ricardo@uniflow.com</span>
+                    <span class="text-gray-400 font-mono mt-0.5 block">Senha: 123</span>
+                </div>
+
+                <div class="bg-orange-50/50 dark:bg-orange-900/10 p-2.5 rounded-lg border border-orange-100 dark:border-orange-800/30 hover:bg-orange-50 transition-colors cursor-default">
+                    <span class="block font-bold text-brand-orange dark:text-orange-400 mb-0.5">Técnico</span>
+                    <span class="text-gray-600 dark:text-gray-300 block truncate" title="tecnico@uniflow.com">tecnico@uniflow.com</span>
+                    <span class="text-gray-400 font-mono mt-0.5 block">Senha: 123</span>
+                </div>
+
+                <div class="bg-gray-50/50 dark:bg-slate-900/50 p-2.5 rounded-lg border border-gray-200 dark:border-slate-700 hover:bg-gray-100 transition-colors cursor-default">
+                    <span class="block font-bold text-gray-700 dark:text-gray-300 mb-0.5">Professor</span>
+                    <span class="text-gray-600 dark:text-gray-300 block truncate" title="maria@uniflow.com">maria@uniflow.com</span>
+                    <span class="text-gray-400 font-mono mt-0.5 block">Senha: 123</span>
+                </div>
+
+                <div class="bg-gray-50/50 dark:bg-slate-900/50 p-2.5 rounded-lg border border-gray-200 dark:border-slate-700 hover:bg-gray-100 transition-colors cursor-default">
+                    <span class="block font-bold text-gray-700 dark:text-gray-300 mb-0.5">Aluno</span>
+                    <span class="text-gray-600 dark:text-gray-300 block truncate" title="joao@uniflow.com">joao@uniflow.com</span>
+                    <span class="text-gray-400 font-mono mt-0.5 block">Senha: 123</span>
+                </div>
+                
+            </div>
         </div>
     </div>
 </div>
  
-<div id="app-container" class="flex h-screen hidden"> 
-    <div class="w-72 bg-white border-r shadow-sm flex flex-col z-20"> 
-        <div class="p-6 border-b"> 
-            <div class="flex items-center gap-3"> 
-                <div class="w-11 h-11 bg-blue-600 rounded-2xl flex items-center justify-center text-white text-3xl font-bold shadow-md shadow-blue-500/20">U</div> 
+<div id="app-container" class="flex h-screen transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] blur-md scale-95 pointer-events-none origin-center bg-[#F8F9FA] dark:bg-slate-900"> 
+    
+    <div id="sidebar" class="absolute md:static inset-y-0 left-0 transform -translate-x-full md:translate-x-0 w-72 bg-white dark:bg-slate-800 border-r border-gray-100 dark:border-slate-700/50 shadow-sm flex flex-col z-30 transition-transform duration-300 ease-in-out"> 
+        <div class="p-6 border-b border-gray-100 dark:border-slate-700/50 flex justify-between items-center relative overflow-hidden"> 
+            <div class="absolute top-0 right-0 w-16 h-16 bg-brand-beige opacity-10 rounded-bl-full"></div>
+            <div class="flex items-center gap-3 relative z-10 cursor-pointer hover:opacity-80 transition-opacity" onclick="navigateTo('dashboard')"> 
                 <div> 
-                    <h1 class="text-3xl font-bold text-blue-700 tracking-tight">UniFlow</h1> 
-                    <p class="text-xs text-gray-400 uppercase tracking-widest font-semibold -mt-1">CAMPUS 360</p> 
+                    <h1 class="text-2xl font-extrabold text-gray-800 dark:text-white tracking-tight">UniFlow</h1> 
+                    <p class="text-[10px] text-brand-orange uppercase tracking-[0.2em] font-bold">Campus 360</p> 
                 </div> 
-            </div> 
+            </div>
+            <button onclick="toggleMenu()" class="md:hidden text-gray-400 hover:text-red-500 transition-colors">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
         </div> 
  
-        <nav class="flex-1 p-4 space-y-1 overflow-y-auto" id="sidebar-nav"> 
-            <button id="nav-dashboard" onclick="navigateTo('dashboard')" class="nav-btn flex items-center gap-3 w-full px-5 py-3.5 rounded-xl text-left font-medium text-gray-600 hover:bg-gray-50 transition-all"> 
+        <nav class="flex-1 p-4 space-y-1.5 overflow-y-auto custom-scrollbar" id="sidebar-nav"> 
+            <button id="nav-dashboard" onclick="navigateTo('dashboard')" class="nav-btn flex items-center gap-3 w-full px-4 py-3.5 rounded-xl text-left font-semibold text-gray-600 dark:text-gray-400 hover:bg-stone-50 dark:hover:bg-slate-700 transition-all"> 
                 <i class="fa-solid fa-chart-line w-5 text-center"></i> Dashboard 
             </button> 
-            <button id="nav-new-ticket" onclick="navigateTo('new-ticket')" class="nav-btn flex items-center gap-3 w-full px-5 py-3.5 rounded-xl text-left font-medium text-gray-600 hover:bg-gray-50 transition-all"> 
+            <button id="nav-new-ticket" onclick="navigateTo('new-ticket')" class="nav-btn flex items-center gap-3 w-full px-4 py-3.5 rounded-xl text-left font-semibold text-gray-600 dark:text-gray-400 hover:bg-stone-50 dark:hover:bg-slate-700 transition-all"> 
                 <i class="fa-solid fa-circle-plus w-5 text-center"></i> Novo Chamado 
             </button> 
-            <button id="nav-tickets" onclick="navigateTo('tickets')" class="nav-btn flex items-center gap-3 w-full px-5 py-3.5 rounded-xl text-left font-medium text-gray-600 hover:bg-gray-50 transition-all"> 
+            <button id="nav-tickets" onclick="navigateTo('tickets')" class="nav-btn flex items-center gap-3 w-full px-4 py-3.5 rounded-xl text-left font-semibold text-gray-600 dark:text-gray-400 hover:bg-stone-50 dark:hover:bg-slate-700 transition-all"> 
                 <i class="fa-solid fa-receipt w-5 text-center"></i> Meus Chamados 
             </button> 
-            <button id="nav-admin" onclick="navigateTo('admin')" class="nav-btn flex items-center gap-3 w-full px-5 py-3.5 rounded-xl text-left font-medium text-gray-600 hover:bg-gray-50 transition-all"> 
-                <i class="fa-solid fa-screwdriver-wrench w-5 text-center"></i> Painel Técnico 
+            
+            <div class="my-2 border-t border-gray-100 dark:border-slate-700/50"></div>
+            
+            <button id="nav-admin" onclick="navigateTo('admin')" class="nav-btn flex items-center gap-3 w-full px-4 py-3.5 rounded-xl text-left font-semibold text-gray-600 dark:text-gray-400 hover:bg-stone-50 dark:hover:bg-slate-700 transition-all hidden"> 
+                <i class="fa-solid fa-users w-5 text-center"></i> Diretório Usuários 
             </button> 
-            <button id="nav-settings" onclick="navigateTo('settings')" class="nav-btn flex items-center gap-3 w-full px-5 py-3.5 rounded-xl text-left font-medium text-gray-600 hover:bg-gray-50 transition-all"> 
-                <i class="fa-solid fa-sliders w-5 text-center"></i> Cadastros / Infra 
+            <button id="nav-settings" onclick="navigateTo('settings')" class="nav-btn flex items-center gap-3 w-full px-4 py-3.5 rounded-xl text-left font-semibold text-gray-600 dark:text-gray-400 hover:bg-stone-50 dark:hover:bg-slate-700 transition-all hidden"> 
+                <i class="fa-solid fa-sliders w-5 text-center"></i> Infraestrutura 
             </button> 
         </nav> 
 
-        <div class="p-4 border-t bg-slate-50/80 flex flex-col gap-3">
-            <div class="flex items-center gap-3 px-2">
-                <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-lg" id="user-avatar">?</div>
-                <div class="overflow-hidden">
-                    <p class="font-semibold text-slate-800 text-sm truncate" id="user-name">...</p>
-                    <p class="text-[10px] text-gray-500 uppercase font-bold tracking-wider" id="user-role">...</p>
+        <div class="p-4 border-t border-gray-100 dark:border-slate-700/50 bg-stone-50/50 dark:bg-slate-800/50 flex flex-col gap-3 relative">
+            <div onclick="toggleProfileMenu()" class="flex items-center justify-between p-2 hover:bg-white dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer border border-transparent">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-brand-lightbeige dark:bg-slate-600 border border-brand-beige/50 text-brand-green dark:text-brand-lightbeige flex items-center justify-center font-extrabold text-lg shadow-inner" id="user-avatar">?</div>
+                    <div class="overflow-hidden">
+                        <p class="font-bold text-gray-800 dark:text-white text-sm truncate" id="user-name">Carregando...</p>
+                        <p class="text-[10px] text-brand-orange uppercase font-bold tracking-wider" id="user-role">SISTEMA</p>
+                    </div>
                 </div>
             </div>
-            <button onclick="fazerLogout()" class="w-full bg-white border border-red-100 hover:bg-red-50 text-red-600 py-2.5 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2 shadow-sm">
-                <i class="fa-solid fa-power-off text-xs"></i> Sair do Sistema
-            </button>
+            <div id="profile-menu" class="hidden absolute bottom-[80px] left-4 right-4 bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 shadow-xl rounded-xl p-2 z-50 transform origin-bottom">
+                <button onclick="toggleDarkMode()" class="w-full flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-stone-50 dark:hover:bg-slate-700 text-sm font-bold text-gray-700 dark:text-gray-300 transition-colors">
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-circle-half-stroke text-brand-green"></i> Modo Escuro</span>
+                    <div class="w-8 h-4 bg-gray-200 dark:bg-brand-green rounded-full relative transition-colors">
+                        <div id="dark-mode-dot" class="w-3 h-3 bg-white rounded-full absolute top-0.5 left-0.5 transition-transform duration-300 transform shadow"></div>
+                    </div>
+                </button>
+                <div class="h-px bg-gray-100 dark:bg-slate-700 my-1"></div>
+                <button onclick="fazerLogout()" class="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-sm font-bold text-red-600 dark:text-red-400 transition-colors">
+                    <i class="fa-solid fa-power-off"></i> Encerrar Sessão
+                </button>
+            </div>
         </div>
     </div> 
- 
-    <div class="flex-1 flex flex-col overflow-hidden"> 
-        <header class="bg-white border-b px-8 py-5 flex justify-between items-center z-10 shadow-sm"> 
-            <h2 id="page-title" class="text-2xl font-bold text-slate-800 tracking-tight">Dashboard</h2> 
-            <div class="flex items-center gap-4"> 
-                <div class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 shadow-sm"> 
-                    <div class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div> 
-                    Servidor Operacional 
-                </div> 
+
+    <div class="flex-1 flex flex-col overflow-hidden bg-[#F8F9FA] dark:bg-slate-900"> 
+        <header class="bg-white dark:bg-slate-800 border-b border-gray-100 dark:border-slate-700/50 px-4 md:px-8 py-4 flex justify-between items-center z-10 shadow-sm relative"> 
+            <div class="flex items-center gap-3"> 
+                <button onclick="toggleMenu()" class="md:hidden text-gray-600 dark:text-gray-300 hover:text-brand-green text-xl"><i class="fa-solid fa-bars"></i></button> 
+                <h2 id="page-title" class="text-xl md:text-2xl font-extrabold text-gray-800 dark:text-white tracking-tight">Visão Geral</h2> 
             </div> 
         </header> 
- 
-        <div class="flex-1 overflow-auto p-8" id="content"> 
-             
-            <div id="dashboard-view" class="space-y-8"> 
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6"> 
-                    <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm card-hover"> 
-                        <p class="text-xs uppercase font-bold text-slate-400 tracking-wider">Total de Ocorrências</p> 
-                        <p id="total" class="text-5xl font-black mt-2 text-slate-800">0</p> 
-                    </div> 
-                    <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm card-hover"> 
-                        <p class="text-xs uppercase font-bold text-slate-400 tracking-wider">Aguardando Triagem</p> 
-                        <p id="aberto" class="text-5xl font-black mt-2 text-amber-600">0</p> 
-                    </div> 
-                    <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm card-hover"> 
-                        <p class="text-xs uppercase font-bold text-slate-400 tracking-wider">Em Resolução</p> 
-                        <p id="atendimento" class="text-5xl font-black mt-2 text-blue-600">0</p> 
-                    </div> 
-                    <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm card-hover"> 
-                        <p class="text-xs uppercase font-bold text-slate-400 tracking-wider">Encerrados</p> 
-                        <p id="resolvidos" class="text-5xl font-black mt-2 text-emerald-600">0</p> 
-                    </div> 
-                </div> 
- 
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6"> 
-                    <div class="bg-white border rounded-2xl p-6 shadow-sm flex flex-col justify-between"> 
-                        <div>
-                            <h3 class="font-bold text-slate-700 text-lg mb-1">Tempo Médio de Resolução (SLA)</h3> 
-                            <p class="text-xs text-gray-400 mb-4">Métrica global calculada automaticamente</p>
-                        </div>
-                        <p id="sla" class="text-6xl font-black text-blue-600 tracking-tight my-4">2.4 <span class="text-xl font-normal text-slate-400">dias</span></p> 
-                        <div class="text-xs text-emerald-600 font-medium bg-emerald-50 p-2.5 rounded-xl border border-emerald-100"><i class="fa-solid fa-caret-up"></i> 14% mais ágil que a meta estipulada institucional.</div>
-                    </div> 
-                    
-                    <div class="bg-white border rounded-2xl p-6 shadow-sm"> 
-                        <h3 class="font-bold text-slate-700 text-lg mb-1">Incidentes por Categoria</h3> 
-                        <p class="text-xs text-gray-400 mb-4">Volume atualizado por setor de infraestrutura</p>
-                        <div id="chart-categorias-container" class="space-y-4 mt-2">
-                            </div> 
-                    </div> 
 
-                    <div class="bg-slate-900 text-white border rounded-2xl p-6 shadow-xl relative overflow-hidden flex flex-col justify-between">
-                        <div class="absolute -right-6 -top-6 text-slate-800 text-9xl font-black pointer-events-none opacity-20">AI</div>
+        <div class="flex-1 overflow-auto p-4 md:p-8 custom-scrollbar"> 
+            
+            <div id="page-dashboard" class="page-content block"> 
+                
+                <div class="bg-gradient-to-r from-brand-green to-brand-lightgreen rounded-3xl p-8 text-white mb-8 relative overflow-hidden shadow-xl animate-fade-in-up">
+                    <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div>
-                            <div class="inline-flex bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider mb-3 shadow-md shadow-cyan-500/20">
-                                <i class="fa-solid fa-brain mr-1.5 mt-0.5 animate-pulse"></i> UniFlow AI Hub
-                            </div>
-                            <h3 class="font-bold text-xl tracking-tight">Predição de Demandas</h3>
-                            <p class="text-slate-400 text-xs mt-1">Análise preditiva de riscos baseada em dados históricos do campus.</p>
+                            <h2 class="text-3xl font-extrabold mb-2" id="welcome-message">Olá! 👋</h2>
+                            <p class="text-brand-lightbeige max-w-lg text-sm md:text-base">Bem-vindo ao portal UniFlow 360. Acompanhe as suas solicitações ativas ou abra um novo chamado rapidamente.</p>
                         </div>
-                        <div class="bg-slate-800/80 border border-slate-700/50 p-4 rounded-xl space-y-3 my-4">
-                            <div class="flex justify-between items-center text-xs">
-                                <span class="text-slate-300">Tendência Próximo Mês:</span>
-                                <span class="font-bold text-cyan-400 text-sm" id="ia-trend">+4.2% Infra</span>
-                            </div>
-                            <div class="flex justify-between items-center text-xs">
-                                <span class="text-slate-300">Ponto Crítico Alvo:</span>
-                                <span class="font-bold text-amber-400 text-sm" id="ia-critical">Laboratórios</span>
-                            </div>
-                        </div>
-                        <p class="text-[10px] text-slate-400"><i class="fa-solid fa-circle-info"></i> Algoritmo baseado em sazonalidade de períodos de avaliações acadêmicas.</p>
+                        <button onclick="navigateTo('new-ticket')" class="bg-brand-orange hover:bg-orange-600 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg hover:shadow-brand-orange/40 hover:-translate-y-1 flex items-center justify-center gap-2 flex-shrink-0 whitespace-nowrap" id="btn-quick-action">
+                            <i class="fa-solid fa-plus"></i> Abrir Chamado
+                        </button>
                     </div>
-                </div> 
+                    <div class="absolute right-0 top-0 bottom-0 w-1/3 bg-white/10 skew-x-12 transform origin-bottom"></div>
+                </div>
+
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold text-gray-800 dark:text-white">Visão Geral</h3>
+                    <select id="filtro-periodo" onchange="atualizarDashboard()" class="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-300 text-sm font-bold rounded-xl px-4 py-2 focus:ring-2 focus:ring-brand-green outline-none shadow-sm cursor-pointer transition-all">
+                        <option value="todos">Todo o Período</option>
+                        <option value="hoje">Hoje</option>
+                        <option value="semana">Últimos 7 dias</option>
+                        <option value="mes">Últimos 30 dias</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-8">
+                    <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-slate-700/50 card-hover">
+                        <div class="w-10 h-10 rounded-xl bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-gray-500 dark:text-gray-400 mb-4"><i class="fa-solid fa-receipt"></i></div>
+                        <p class="text-sm font-semibold text-gray-500 dark:text-gray-400">Total</p>
+                        <h3 class="text-3xl font-black text-gray-800 dark:text-white mt-1" id="total">0</h3>
+                    </div>
+                    <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-slate-700/50 card-hover">
+                        <div class="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-900/20 flex items-center justify-center text-red-500 mb-4"><i class="fa-solid fa-circle-exclamation"></i></div>
+                        <p class="text-sm font-semibold text-gray-500 dark:text-gray-400">Abertos</p>
+                        <h3 class="text-3xl font-black text-gray-800 dark:text-white mt-1" id="aberto">0</h3>
+                    </div>
+                    <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-slate-700/50 card-hover">
+                        <div class="w-10 h-10 rounded-xl bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center text-brand-orange mb-4"><i class="fa-solid fa-user-gear"></i></div>
+                        <p class="text-sm font-semibold text-gray-500 dark:text-gray-400">Em Atendimento</p>
+                        <h3 class="text-3xl font-black text-gray-800 dark:text-white mt-1" id="atendimento">0</h3>
+                    </div>
+                    <div class="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-slate-700/50 card-hover">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center text-emerald-500 mb-4"><i class="fa-solid fa-check-double"></i></div>
+                        <p class="text-sm font-semibold text-gray-500 dark:text-gray-400">Resolvidos</p>
+                        <h3 class="text-3xl font-black text-gray-800 dark:text-white mt-1" id="resolvidos">0</h3>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-slate-700/50">
+                        <h3 class="text-sm font-extrabold text-gray-800 dark:text-white mb-4 uppercase tracking-wider">Por Categoria</h3>
+                        <div id="chart-categorias-container" class="space-y-4"></div>
+                    </div>
+                    
+                    <div class="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-slate-700/50 flex flex-col h-full">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-sm font-extrabold text-gray-800 dark:text-white uppercase tracking-wider">Chamados Recentes</h3>
+                            <button onclick="navigateTo('tickets')" class="text-brand-green dark:text-brand-lightgreen text-sm font-bold hover:underline">Ver todos</button>
+                        </div>
+                        <div id="recent-tickets-container" class="flex-1 overflow-y-auto space-y-3 custom-scrollbar pr-2 max-h-[300px]">
+                            </div>
+                    </div>
+                </div>
             </div> 
- 
-            <div id="new-ticket-view" class="hidden"> 
-                <div class="max-w-2xl mx-auto bg-white rounded-3xl border shadow-sm p-8"> 
-                    <div class="flex justify-between items-start mb-6">
-                        <div>
-                            <h3 class="text-2xl font-black text-slate-800 tracking-tight">Abertura de Ocorrência</h3> 
-                            <p class="text-sm text-gray-500 mt-1">Insira os detalhes do problema identificado no campus.</p>
-                        </div>
+
+            <div id="page-new-ticket" class="page-content hidden animate-fade-in-up"> 
+                <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700/50 p-6 md:p-8 max-w-4xl mx-auto">
+                    <div class="mb-6 pb-6 border-b border-gray-100 dark:border-slate-700">
+                        <h3 class="text-xl font-bold text-gray-800 dark:text-white">Abrir Solicitação</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Preencha os detalhes abaixo para que a nossa equipa possa ajudar.</p>
                     </div>
-                    <form id="ticketForm" onsubmit="criarChamado(event)" class="space-y-5"> 
-                        <div> 
-                            <label class="block text-sm font-semibold mb-1.5">Título Curto do Problema</label> 
-                            <input type="text" id="titulo" required class="w-full border rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Ex: Ar condicionado pingando água"> 
-                        </div> 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-5"> 
-                            <div> 
-                                <label class="block text-sm font-semibold mb-1.5">Categoria</label> 
-                                <select id="categoria" required class="w-full border rounded-xl px-4 py-3 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"></select> 
-                            </div> 
-                            <div> 
-                                <label class="block text-sm font-semibold mb-1.5">Local / Bloco / Sala</label> 
-                                <select id="local" required class="w-full border rounded-xl px-4 py-3 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"></select> 
-                            </div> 
-                            <div> 
-                                <label class="block text-sm font-semibold mb-1.5">Equipamento Vinculado</label> 
-                                <select id="equipamento" required class="w-full border rounded-xl px-4 py-3 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"></select> 
-                            </div> 
-                            <div> 
-                                <label class="block text-sm font-semibold mb-1.5">Prioridade Inicial</label> 
-                                <select id="prioridade" class="w-full border rounded-xl px-4 py-3 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"> 
-                                    <option value="Baixa">Baixa</option> 
-                                    <option value="Média" selected>Média</option> 
-                                    <option value="Alta">Alta</option> 
-                                    <option value="Urgente">Urgente</option> 
-                                </select> 
-                            </div> 
-                        </div> 
-                        <div> 
-                            <div class="flex justify-between items-center mb-1.5">
-                                <label class="block text-sm font-semibold">Descrição Detalhada</label> 
-                                <span id="ia-badge-typing" class="text-[11px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-medium transition-all opacity-0"><i class="fa-solid fa-robot text-blue-500"></i> IA Analisando...</span>
-                            </div>
-                            <textarea id="descricao" rows="4" required oninput="analisarDescricaoComIA(this.value)" class="w-full border rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Descreva o cenário com detalhes para agilizar o atendimento técnico..."></textarea> 
-                        </div> 
+
+                    <form id="form-novo-chamado" onsubmit="criarChamado(event)" class="space-y-6"> 
                         
-                        <div id="ia-suggestion-box" class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/60 p-4 rounded-xl hidden transition-all">
+                        <div class="group relative">
+                            <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5 group-hover:text-brand-green transition-colors">Qual é o problema? (Título) <span class="text-red-500">*</span></label>
+                            <input type="text" id="titulo" required oninput="analisarTituloKB(this.value)" class="w-full bg-stone-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-brand-green dark:bg-slate-900/50 dark:border-slate-600 dark:text-white outline-none transition-all shadow-inner" placeholder="Ex: Computador não liga">
+                        </div>
+
+                        <div id="kb-suggestion-box" class="hidden mt-2 bg-brand-lightbeige/40 dark:bg-brand-orange/10 border border-brand-orange/30 rounded-xl p-4 animate-fade-in-up">
                             <div class="flex items-start gap-3">
-                                <div class="text-blue-600 mt-0.5"><i class="fa-solid fa-wand-magic-sparkles text-lg"></i></div>
-                                <div>
-                                    <p class="text-xs font-bold text-blue-900 uppercase tracking-wider">Classificação de IA Assistente</p>
-                                    <p class="text-xs text-blue-700 mt-0.5" id="ia-suggestion-text"></p>
+                                <div class="w-8 h-8 rounded-full bg-brand-orange text-white flex items-center justify-center font-bold text-sm shadow-sm flex-shrink-0 mt-0.5">
+                                    <i class="fa-solid fa-lightbulb"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <p class="text-sm font-bold text-brand-orange mb-1">Dica Rápida (IA)</p>
+                                    <p class="text-xs text-gray-700 dark:text-gray-300 mb-1" id="kb-suggestion-text"></p>
                                 </div>
                             </div>
                         </div>
 
-                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold text-lg transition-all shadow-md shadow-blue-500/10"> 
-                            Registrar Ocorrência
-                        </button> 
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6"> 
+                            <div>
+                                <label for="ticket-local" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Local / Sala</label>
+                                <input type="text" id="ticket-local" list="locais-sugeridos" placeholder="Digite a sala ou bloco (Ex: Sala 305)" class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-brand-green focus:border-transparent outline-none transition text-sm">
+
+                                <datalist id="locais-sugeridos"></datalist>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">Categoria <span class="text-red-500">*</span></label>
+                                <select id="categoria" required class="w-full bg-stone-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-brand-green dark:bg-slate-900/50 dark:border-slate-600 dark:text-white outline-none cursor-pointer shadow-inner"></select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">Equipamento (Opcional)</label>
+                                <select id="equipamento" class="w-full bg-stone-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-brand-green dark:bg-slate-900/50 dark:border-slate-600 dark:text-white outline-none cursor-pointer shadow-inner"></select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">Prioridade <span class="text-red-500">*</span></label>
+                                <select id="prioridade" required class="w-full bg-stone-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-brand-green dark:bg-slate-900/50 dark:border-slate-600 dark:text-white outline-none cursor-pointer shadow-inner">
+                                    <option value="Baixa">Baixa (Rotina)</option>
+                                    <option value="Média">Média (Impacto Parcial)</option>
+                                    <option value="Alta">Alta (Paralisação)</option>
+                                    <option value="Urgente">Urgente (Risco)</option>
+                                </select>
+                            </div>
+                        </div> 
+                        
+                        <div class="group">
+                            <label class="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5 flex justify-between">
+                                Descrição <span class="text-red-500">*</span>
+                            </label>
+                            <textarea id="descricao" required rows="4" class="w-full bg-stone-50 border border-gray-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-brand-green dark:bg-slate-900/50 dark:border-slate-600 dark:text-white outline-none transition-all shadow-inner custom-scrollbar" placeholder="Descreva os sintomas, mensagens de erro ou testes já realizados..."></textarea>
+                        </div>
+
+                        <div class="flex justify-end pt-4">
+                            <button type="submit" class="bg-brand-green hover:bg-brand-lightgreen text-white px-8 py-3.5 rounded-xl font-bold shadow-lg shadow-brand-green/20 hover:shadow-brand-green/40 hover:-translate-y-1 transition-all flex items-center justify-center gap-2 w-full md:w-auto"> 
+                                Enviar Solicitação <i class="fa-solid fa-arrow-right"></i> 
+                            </button> 
+                        </div>
                     </form> 
-                </div> 
-            </div> 
- 
-            <div id="tickets-view" class="hidden space-y-6"> 
-                <h3 class="text-2xl font-bold tracking-tight">Histórico de Ocorrências</h3> 
-                <div class="bg-white rounded-2xl border overflow-hidden shadow-sm"> 
-                    <div class="overflow-x-auto">
-                        <table class="w-full border-collapse"> 
-                            <thead class="bg-slate-50 border-b"> 
-                                <tr> 
-                                    <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-400">Protocolo</th> 
-                                    <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-400">Título / Assunto</th> 
-                                    <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-400">Localização</th> 
-                                    <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-400">Gravidade</th> 
-                                    <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-400">Status Atual</th> 
-                                    <th class="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-400">Abertura</th> 
-                                </tr> 
-                            </thead> 
-                            <tbody id="table-body" class="divide-y divide-slate-100"></tbody> 
-                        </table> 
-                    </div>
-                </div> 
-            </div> 
- 
-            <div id="admin-view" class="hidden space-y-6"> 
-                <h3 class="text-2xl font-bold tracking-tight">Fila de Atendimento e Triagem Geral</h3> 
-                <div class="bg-white rounded-2xl p-6 border shadow-sm"> 
-                    <div id="admin-tickets-list" class="space-y-4"></div> 
-                </div> 
-            </div> 
-
-            <div id="settings-view" class="hidden space-y-8">
-                <div>
-                    <h3 class="text-2xl font-bold tracking-tight">Infraestrutura do Campus</h3>
-                    <p class="text-sm text-gray-500 mt-1">Gerencie as salas, categorias de problemas e ativos mapeados.</p>
                 </div>
+            </div> 
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="bg-white p-6 border rounded-2xl shadow-sm flex flex-col justify-between">
-                        <div>
-                            <h4 class="font-bold text-slate-700 mb-3"><i class="fa-solid fa-building text-blue-500 mr-2"></i> Salas e Laboratórios</h4>
-                            <div id="list-settings-local" class="max-h-40 overflow-y-auto border rounded-xl divide-y p-1 space-y-1 bg-slate-50 text-xs"></div>
+            <div id="page-tickets" class="page-content hidden animate-fade-in-up"> 
+                <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700/50 flex flex-col h-[calc(100vh-140px)]">
+                    <div class="p-6 border-b border-gray-100 dark:border-slate-700/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div class="flex flex-1 gap-3">
+                            <div class="relative max-w-md w-full">
+                                <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                <input type="text" id="busca-chamado" oninput="filtrarChamados()" placeholder="Procurar protocolo, título ou local..." class="w-full bg-stone-50 dark:bg-slate-900/50 border border-gray-200 dark:border-slate-600 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green dark:text-white">
+                            </div>
+                            
+                            <select id="filtro-tecnico" onchange="filtrarChamados()" class="hidden bg-stone-50 dark:bg-slate-900/50 border border-gray-200 dark:border-slate-600 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-green dark:text-white cursor-pointer w-48">
+                                <option value="todos">Todos os Técnicos</option>
+                            </select>
                         </div>
-                        <div class="mt-4 flex gap-2">
-                            <input type="text" id="input-add-local" class="border rounded-xl px-3 py-2 text-xs flex-1" placeholder="Ex: Laboratório 3 - Bloco C">
-                            <button onclick="adicionarItemInfra('local')" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2 rounded-xl">Add</button>
+                        
+                        <div class="flex gap-2 overflow-x-auto custom-scrollbar pb-1 md:pb-0" id="status-filters">
+                            <button onclick="filtrarPorStatus('Todos', this)" class="status-filter-btn whitespace-nowrap bg-brand-green text-white px-4 py-2 rounded-xl text-sm font-bold shadow-sm transition-colors">Todos</button>
+                            <button onclick="filtrarPorStatus('Aberto', this)" class="status-filter-btn whitespace-nowrap bg-stone-50 dark:bg-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-600 px-4 py-2 rounded-xl text-sm font-bold transition-colors">Abertos</button>
+                            <button onclick="filtrarPorStatus('Em Atendimento', this)" class="status-filter-btn whitespace-nowrap bg-stone-50 dark:bg-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-600 px-4 py-2 rounded-xl text-sm font-bold transition-colors">Atendimento</button>
+                            <button onclick="filtrarPorStatus('Resolvido', this)" class="status-filter-btn whitespace-nowrap bg-stone-50 dark:bg-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-600 px-4 py-2 rounded-xl text-sm font-bold transition-colors">Resolvidos</button>
                         </div>
                     </div>
+                    
+                    <div class="flex-1 overflow-auto p-2 md:p-6 custom-scrollbar" id="lista-chamados-container">
+                        </div>
+                </div>
+            </div> 
 
-                    <div class="bg-white p-6 border rounded-2xl shadow-sm flex flex-col justify-between">
-                        <div>
-                            <h4 class="font-bold text-slate-700 mb-3"><i class="fa-solid fa-tags text-purple-500 mr-2"></i> Categorias de Ocorrências</h4>
-                            <div id="list-settings-categoria" class="max-h-40 overflow-y-auto border rounded-xl divide-y p-1 space-y-1 bg-slate-50 text-xs"></div>
-                        </div>
-                        <div class="mt-4 flex gap-2">
-                            <input type="text" id="input-add-categoria" class="border rounded-xl px-3 py-2 text-xs flex-1" placeholder="Ex: Elétrica / Tomadas">
-                            <button onclick="adicionarItemInfra('categoria')" class="bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold px-4 py-2 rounded-xl">Add</button>
-                        </div>
+            <div id="page-admin" class="page-content hidden animate-fade-in-up"> 
+                <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700/50 p-6 max-w-5xl mx-auto">
+                    <div class="mb-6 pb-6 border-b border-gray-100 dark:border-slate-700">
+                        <h3 class="text-xl font-bold text-gray-800 dark:text-white"><i class="fa-solid fa-users text-brand-green mr-2"></i> Diretório de Utilizadores</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Visão geral de todos os Alunos, Professores, Técnicos e Gestores cadastrados na plataforma.</p>
                     </div>
-
-                    <div class="bg-white p-6 border rounded-2xl shadow-sm flex flex-col justify-between">
-                        <div>
-                            <h4 class="font-bold text-slate-700 mb-3"><i class="fa-solid fa-computer text-amber-500 mr-2"></i> Ativos / Equipamentos</h4>
-                            <div id="list-settings-equipamento" class="max-h-40 overflow-y-auto border rounded-xl divide-y p-1 space-y-1 bg-slate-50 text-xs"></div>
+                    
+                    <div class="overflow-x-auto rounded-xl border border-gray-100 dark:border-slate-700">
+                        <table class="w-full text-left text-sm whitespace-nowrap">
+                            <thead class="text-xs text-gray-500 bg-gray-50 dark:bg-slate-900/50 dark:text-gray-400 uppercase font-bold">
+                                <tr>
+                                    <th class="px-6 py-4">Nome Completo</th>
+                                    <th class="px-6 py-4">E-mail Acadêmico / Acesso</th>
+                                    <th class="px-6 py-4 text-right">Função (Cargo)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lista-usuarios-gestor" class="divide-y divide-gray-100 dark:divide-slate-700/50 bg-white dark:bg-slate-800">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="page-settings" class="page-content hidden animate-fade-in-up">
+                <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700/50 p-6 max-w-4xl mx-auto">
+                    <h3 class="text-xl font-bold mb-4 dark:text-white">Gerir Infraestrutura</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="space-y-3">
+                            <h4 class="font-bold text-brand-green dark:text-brand-lightgreen border-b pb-2 dark:border-slate-700">Locais / Salas</h4>
+                            <div class="flex gap-2">
+                                <input type="text" id="input-add-local" class="flex-1 border rounded-xl px-3 text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white">
+                                <button onclick="adicionarItemInfra('local')" class="bg-brand-green text-white px-3 rounded-xl hover:bg-brand-lightgreen"><i class="fa-solid fa-plus"></i></button>
+                            </div>
+                            <div id="list-settings-local" class="space-y-2 max-h-48 overflow-y-auto custom-scrollbar"></div>
                         </div>
-                        <div class="mt-4 flex gap-2">
-                            <input type="text" id="input-add-equipamento" class="border rounded-xl px-3 py-2 text-xs flex-1" placeholder="Ex: Nobreak SMS 1200VA">
-                            <button onclick="adicionarItemInfra('equipamento')" class="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-4 py-2 rounded-xl">Add</button>
+                        <div class="space-y-3">
+                            <h4 class="font-bold text-brand-green dark:text-brand-lightgreen border-b pb-2 dark:border-slate-700">Categorias</h4>
+                            <div class="flex gap-2">
+                                <input type="text" id="input-add-categoria" class="flex-1 border rounded-xl px-3 text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white">
+                                <button onclick="adicionarItemInfra('categoria')" class="bg-brand-green text-white px-3 rounded-xl hover:bg-brand-lightgreen"><i class="fa-solid fa-plus"></i></button>
+                            </div>
+                            <div id="list-settings-categoria" class="space-y-2 max-h-48 overflow-y-auto custom-scrollbar"></div>
+                        </div>
+                        <div class="space-y-3">
+                            <h4 class="font-bold text-brand-green dark:text-brand-lightgreen border-b pb-2 dark:border-slate-700">Equipamentos</h4>
+                            <div class="flex gap-2">
+                                <input type="text" id="input-add-equipamento" class="flex-1 border rounded-xl px-3 text-sm dark:bg-slate-700 dark:border-slate-600 dark:text-white">
+                                <button onclick="adicionarItemInfra('equipamento')" class="bg-brand-green text-white px-3 rounded-xl hover:bg-brand-lightgreen"><i class="fa-solid fa-plus"></i></button>
+                            </div>
+                            <div id="list-settings-equipamento" class="space-y-2 max-h-48 overflow-y-auto custom-scrollbar"></div>
                         </div>
                     </div>
                 </div>
